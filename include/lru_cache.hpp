@@ -1,16 +1,17 @@
+#include "./tuple_hash.hpp"
+#include "./types.hpp"
 #include <functional>
 #include <unordered_map>
 
-template <typename Ret, typename... Params> class LruCache {
+template <typename Ret, typename... Params> struct LruCache {
 private:
   mutable std::unordered_map<std::tuple<Params...>, Ret> _dict;
-  using FuncType = std::function<Ret(Params...)>;
-  FuncType _f;
-  std::function<Ret(FuncType, Params...)> _g;
+  F<Ret, Params...> _f;
+  Function<Ret, Params...> _g;
 
 public:
   LruCache() : _dict{} {}
-  LruCache(std::function<Ret(FuncType, Params...)> f) : _dict{}, _g(f) {
+  LruCache(Function<Ret, Params...> f) : _dict{}, _g(f) {
 
     auto rec = [&](Params &&...args) -> Ret {
       return (*this)(std::forward<Params>(args)...);
@@ -50,3 +51,9 @@ public:
     return _dict[args_as_tuple];
   }
 };
+
+// Here's a deduction guide for our LruCache
+// Pair objects initialized with arguments of type T and U should deduce to
+// Pair<T, U>
+template <typename Ret, typename... Params>
+LruCache(Function<Ret, Params...>) -> LruCache<Ret, Params...>;
